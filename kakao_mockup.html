@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KAKAO MOCK-UP TOOL</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* ── 전역 변수 ── */
+    :root {
+      /* chb_box 제어 변수 */
+      --chb-top: 19.80%;
+      --chb-width: 91.7727%;
+      --chb-padding-top: 22.5%;
+
+      /* back_blur 제어 변수 */
+      --blur-bottom: 9.5%;
+      --blur-height: 59.5%;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0c10;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 60px;
+    }
+
+    /* ── 헤더 ── */
+    .page-header {
+      width: 100%;
+      max-width: 860px;
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .page-header h1 span {
+      color: #38bdf8;
+    }
+
+    /* ── 컨트롤 패널 ── */
+    .control-panel {
+      width: 100%;
+      max-width: 860px;
+      background: #13181f;
+      border: 1px solid #1e2a38;
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-end;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-width: 200px;
+    }
+    .input-group label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .input-group label em {
+      font-style: normal;
+      color: #38bdf8;
+      margin-left: 6px;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .file-input-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #64748b;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .file-input-wrapper:hover .file-input-display {
+      border-color: #38bdf8;
+      color: #cbd5e1;
+    }
+    .file-input-display .icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      opacity: 0.5;
+    }
+    .file-input-display.has-file {
+      border-color: #38bdf8;
+      color: #e2e8f0;
+    }
+    .file-input-display.has-file .icon { opacity: 1; }
+
+    /* ── 버튼 그룹 ── */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-apply {
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: #0d1117;
+      box-shadow: 0 0 16px rgba(56,189,248,0.25);
+    }
+    .btn-apply:hover { box-shadow: 0 0 24px rgba(56,189,248,0.45); }
+    .btn-capture {
+      background: linear-gradient(135deg, #a855f7, #c084fc);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(168,85,247,0.25);
+    }
+    .btn-capture:hover { box-shadow: 0 0 24px rgba(168,85,247,0.45); }
+    .btn-reset {
+      background: #1e2a38;
+      color: #94a3b8;
+      border: 1px solid #2d3748;
+    }
+    .btn-reset:hover { background: #263445; color: #e2e8f0; }
+
+    /* ── 캡쳐 대상 영역 ── */
+    .vw-container {
+      position: relative;
+      width: 100%;
+      max-width: 860px;
+      height: auto;
+      min-height: 480px;
+      background: #0d1117;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px #1e2a38, 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .vw-inner {
+      position: relative;
+      display: block;
+      width: 100%;
+      padding-top: 216.7939%;
+      /* padding-top: 56.25%; */
+      background-color: #fff;
+    }
+    .vw_box {
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      width: 100%;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .chb_box {
+      position: absolute;
+      top: var(--chb-top);
+      width: var(--chb-width);
+      padding-top: var(--chb-padding-top);
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 25px;
+      background-color: #f3f3f3;
+      box-sizing: border-box;
+      z-index: 2;
+    }
+    .chb_box img {
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: auto;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 25px;
+    }
+    .back_blur {
+      position: absolute;
+      left: 0; right: 0;
+      bottom: var(--blur-bottom);
+      height: var(--blur-height);
+      width: 100%;
+      z-index: 5;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* ── 상태 메시지 ── */
+    .status-bar {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 14px;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #64748b;
+      flex-shrink: 0;
+    }
+    .status-text {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+    .status-bar.success .status-dot { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .status-bar.success .status-text { color: #34d399; }
+    .status-bar.error .status-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
+    .status-bar.error .status-text { color: #f87171; }
+    .status-bar.info .status-dot { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+    .status-bar.info .status-text { color: #38bdf8; }
+
+    /* ── 로딩 오버레이 ── */
+    #capture-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #capture-overlay.active { display: flex; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #1e2a38;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #capture-overlay p {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>KAKAO <span>Mock-up</span> Tool</h1>
+  </div>
+
+  <!-- 컨트롤 패널 -->
+  <div class="control-panel">
+
+    <div class="input-group">
+      <label>배경 카톡 이미지 선택</label>
+      <div class="file-input-wrapper">
+        <input type="file" id="input-aa" accept="image/*" />
+        <div class="file-input-display" id="display-aa">
+          <!-- 이미지 아이콘 -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span class="file-name">파일 선택...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>배너 이미지 선택</label>
+      <div class="file-input-wrapper">
+        <input type="file" id="input-bb" accept="image/*" />
+        <div class="file-input-display" id="display-bb">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span class="file-name">파일 선택...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-apply" id="btn-apply">적용하기</button>
+      <button class="btn btn-capture" id="btn-capture">캡쳐하기</button>
+      <button class="btn btn-reset" id="btn-reset">초기화</button>
+    </div>
+
+  </div>
+
+  <!-- 캡쳐 대상 영역 -->
+  <div class="vw-container" id="capture-target">
+    <div class="vw-inner">
+      <div class="vw_box" id="vw_box"></div>
+      <div class="chb_box" id="chb_box"></div>
+      <div class="back_blur" id="back_blur"></div>
+    </div>
+  </div>
+
+  <!-- 상태 메시지 -->
+  <div class="status-bar" id="status-bar">
+    <div class="status-dot"></div>
+    <span class="status-text">이미지를 선택한 후 '적용하기'를 눌러주세요.</span>
+  </div>
+
+  <!-- 로딩 오버레이 -->
+  <div id="capture-overlay">
+    <div class="spinner"></div>
+    <p>캡쳐 처리 중...</p>
+  </div>
+
+  <script>
+  $(function () {
+
+    /* ════════════════════════════════════════
+       변수 (CSS 변수와 동기화)
+       필요 시 이 값만 수정하면 레이아웃 반영
+    ════════════════════════════════════════ */
+    const CHB = {
+      top        : '19.80%',
+      width      : '91.7727%',
+      paddingTop : '22.5%'
+    };
+    const BLUR = {
+      bottom : '9.1%',
+      height : '59.5%'
+    };
+
+    // CSS 변수 초기 적용
+    function applyCSSVars () {
+      const root = document.documentElement;
+      root.style.setProperty('--chb-top',         CHB.top);
+      root.style.setProperty('--chb-width',        CHB.width);
+      root.style.setProperty('--chb-padding-top',  CHB.paddingTop);
+      root.style.setProperty('--blur-bottom',      BLUR.bottom);
+      root.style.setProperty('--blur-height',      BLUR.height);
+    }
+    applyCSSVars();
+
+    /* ════════════════════════════════════════
+       유틸
+    ════════════════════════════════════════ */
+    function setStatus (msg, type = '') {
+      const $bar = $('#status-bar');
+      $bar.removeClass('success error info').addClass(type);
+      $bar.find('.status-text').text(msg);
+    }
+
+    function fileToDataURL (file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* ════════════════════════════════════════
+       파일 입력 UI 업데이트
+    ════════════════════════════════════════ */
+    function bindFileInput (inputId, displayId) {
+      $('#' + inputId).on('change', function () {
+        const file = this.files[0];
+        const $d   = $('#' + displayId);
+        if (file) {
+          $d.addClass('has-file');
+          $d.find('.file-name').text(file.name);
+        } else {
+          $d.removeClass('has-file');
+          $d.find('.file-name').text('파일 선택...');
+        }
+      });
+    }
+    bindFileInput('input-aa', 'display-aa');
+    bindFileInput('input-bb', 'display-bb');
+
+    /* ════════════════════════════════════════
+       적용하기
+    ════════════════════════════════════════ */
+    $('#btn-apply').on('click', async function () {
+      const aaFile = $('#input-aa')[0].files[0];
+      const bbFile = $('#input-bb')[0].files[0];
+
+      if (!aaFile && !bbFile) {
+        setStatus('이미지를 하나 이상 선택해주세요.', 'error');
+        return;
+      }
+
+      try {
+        /* aa → vw_box 배경 */
+        if (aaFile) {
+          const aaURL = await fileToDataURL(aaFile);
+          $('#vw_box').css('background-image', `url('${aaURL}')`);
+        }
+
+        /* bb → chb_box 내부 img */
+        if (bbFile) {
+          const bbURL = await fileToDataURL(bbFile);
+          // 기존 img 제거 후 새로 삽입
+          $('#chb_box').empty().append(
+            $('<img>').attr('src', bbURL).attr('alt', 'overlay')
+          );
+        }
+
+        // chb_box / back_blur CSS 변수 재적용 (혹시 초기화 후 재사용 시)
+        applyCSSVars();
+
+        setStatus('이미지가 적용되었습니다.', 'success');
+      } catch (err) {
+        setStatus('이미지 적용 중 오류가 발생했습니다.', 'error');
+        console.error(err);
+      }
+    });
+
+    /* ════════════════════════════════════════
+       캡쳐하기
+       backdrop-filter 는 html2canvas 에서 미지원 →
+       캔버스에 직접 블러 레이어를 재현한다.
+    ════════════════════════════════════════ */
+    $('#btn-capture').on('click', async function () {
+
+      const $container = $('#capture-target');
+      const $inner     = $container.find('.vw-inner');
+      const $blur      = $('#back_blur');
+
+      // 지원 여부 확인
+      if (typeof html2canvas === 'undefined') {
+        setStatus('html2canvas 라이브러리를 불러오지 못했습니다.', 'error');
+        return;
+      }
+
+      $('#capture-overlay').addClass('active');
+      setStatus('캡쳐 처리 중입니다...', 'info');
+
+      try {
+        // ── 1단계: 블러 제외하고 원본 캔버스 생성 ──
+        $blur.hide();
+
+        const baseCanvas = await html2canvas($container[0], {
+          useCORS      : true,
+          allowTaint   : true,
+          backgroundColor: null,
+          scale        : window.devicePixelRatio || 2,
+          logging      : false
+        });
+
+        $blur.show();
+
+        // ── 2단계: 블러 영역 계산 ──
+        const cW = baseCanvas.width;
+        const cH = baseCanvas.height;
+
+        // vw-inner 기준으로 blur 영역 픽셀 좌표 계산
+        const innerRect    = $inner[0].getBoundingClientRect();
+        const contRect     = $container[0].getBoundingClientRect();
+        const scale        = cW / contRect.width;
+
+        const innerH_px    = innerRect.height * scale;
+        const innerTop_px  = (innerRect.top - contRect.top) * scale;
+
+        const blurBottomPct = parseFloat(BLUR.bottom)  / 100;
+        const blurHeightPct = parseFloat(BLUR.height)  / 100;
+
+        const blurH   = innerH_px * blurHeightPct;
+        const blurBot = innerH_px * blurBottomPct;
+        const blurY   = innerTop_px + innerH_px - blurBot - blurH;
+
+        // ── 3단계: 최종 캔버스에 블러 합성 ──
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width  = cW;
+        finalCanvas.height = cH;
+        const ctx = finalCanvas.getContext('2d');
+
+        // 원본 그리기
+        ctx.drawImage(baseCanvas, 0, 0);
+
+        // 블러 영역 추출 → offscreen canvas 에서 blur filter 적용
+        const blurCanvas = document.createElement('canvas');
+        blurCanvas.width  = cW;
+        blurCanvas.height = Math.ceil(blurH);
+        const bCtx = blurCanvas.getContext('2d');
+
+        bCtx.filter = 'blur(12px)';
+        bCtx.drawImage(
+          baseCanvas,
+          0, blurY, cW, blurH,       // 소스 영역
+          0, 0,     cW, blurH        // 대상
+        );
+
+        // 블러된 레이어를 최종 캔버스에 합성
+        ctx.drawImage(blurCanvas, 0, blurY);
+
+        // ── 4단계: PNG Blob → 다운로드 다이얼로그 ──
+        finalCanvas.toBlob(blob => {
+          if (!blob) {
+            setStatus('캔버스 변환에 실패했습니다.', 'error');
+            $('#capture-overlay').removeClass('active');
+            return;
+          }
+
+          const ts   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+          const name = `capture_${ts}.png`;
+
+          // showSaveFilePicker API (Chrome 86+) 로 저장 위치 선택
+          if (window.showSaveFilePicker) {
+            (async () => {
+              try {
+                const fileHandle = await window.showSaveFilePicker({
+                  suggestedName : name,
+                  types : [{
+                    description : 'PNG Image',
+                    accept      : { 'image/png': ['.png'] }
+                  }]
+                });
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                setStatus(`저장 완료: ${fileHandle.name}`, 'success');
+              } catch (e) {
+                if (e.name !== 'AbortError') {
+                  setStatus('저장 중 오류가 발생했습니다.', 'error');
+                  console.error(e);
+                } else {
+                  setStatus('저장이 취소되었습니다.', '');
+                }
+              } finally {
+                $('#capture-overlay').removeClass('active');
+              }
+            })();
+          } else {
+            // 폴백: 자동 다운로드
+            const url = URL.createObjectURL(blob);
+            const a   = document.createElement('a');
+            a.href     = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setStatus(`다운로드 완료: ${name}`, 'success');
+            $('#capture-overlay').removeClass('active');
+          }
+        }, 'image/png');
+
+      } catch (err) {
+        $blur.show();
+        setStatus('캡쳐 중 오류가 발생했습니다.', 'error');
+        console.error(err);
+        $('#capture-overlay').removeClass('active');
+      }
+    });
+
+    /* ════════════════════════════════════════
+       초기화
+    ════════════════════════════════════════ */
+    $('#btn-reset').on('click', function () {
+      // 파일 입력 초기화
+      $('#input-aa').val('');
+      $('#input-bb').val('');
+      $('#display-aa').removeClass('has-file').find('.file-name').text('파일 선택...');
+      $('#display-bb').removeClass('has-file').find('.file-name').text('파일 선택...');
+
+      // 이미지 제거
+      $('#vw_box').css('background-image', '');
+      $('#chb_box').empty();
+
+      // CSS 변수 재적용
+      applyCSSVars();
+
+      setStatus('초기화 되었습니다.', '');
+    });
+
+  });
+  </script>
+</body>
+</html>
